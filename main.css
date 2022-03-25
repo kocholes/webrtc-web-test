@@ -1,0 +1,29 @@
+input,
+textarea {
+  width: 300px;
+}
+
+h1 {
+  margin-bottom: 8px;
+  font-size: 20px;
+  color: #446;
+}
+
+h2 {
+  margin-bottom: 4px;
+  font-size: 16px;
+  color: #446;
+}
+
+button {
+  padding: 4px 12px;
+  margin-bottom: 8px;
+}
+
+#phone img {
+  width: 200px;
+}
+
+#cameraPosX, #cameraPosY, #cameraPosZ {
+  width: 50px;
+} 

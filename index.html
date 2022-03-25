@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>WebRTC data channel test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" type="text/css" media="screen" href="/main.css" />
+  </head>
+  <body>
+    <h1>WebRTC data channel test</h1>
+    <div>
+      <button id="startOfferBtn">Start offer</button>
+      <button id="connectBtn">Connect</button>
+      <button id="disconnectBtn" disabled>Disconnect</button>
+    </div>
+    <input id="channelId" />
+    <h2>Message:</h2>
+    <textarea id="messageText" disabled rows="5"></textarea>
+    <div>
+      <button id="sendMessageBtn" disabled>Send</button>
+      <button id="sendPingBtn" disabled>Ping</button>
+    </div>
+    <h2>Message history</h2>
+    <div id="incomingMessages"></div>
+    <h2>Stats</h2>
+    <div id="statsContainer"></div>
+    <h2>3d sensors feedback</h2>
+    <div>
+      Camera position: 
+      <input id="cameraPosX" placeholder="X" type="number" step="1" value="-2"/>
+      <input id="cameraPosY" placeholder="Y" type="number" step="1" value="0"/> 
+      <input id="cameraPosZ" placeholder="Z" type="number" step="1" value="0"/>
+    </div>
+    <div>
+      Roll: <span id="rollDegrees" ></span> Pitch:<span id="pitchDegrees" ></span>
+    </div>
+    <div id="phone3D"></div>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
