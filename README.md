@@ -34,7 +34,7 @@ $ npm run dev
 
 the app will start at [http://localhost:3000/](http://localhost:3000/)
 
-# How to use the app
+## How to use the app
 - Press `Start Offer` to create a connection hash
 - In another browser or tab, paste the connection hash an press `Connect`
 - If the connection is successful you can start sending messages
