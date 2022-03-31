@@ -1,92 +1,74 @@
-import firebase from "firebase/app";
-import "firebase/firestore";
-import { firebaseConfig } from "../firebaseConfig";
+import SignalingService from "../signalingService";
 
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
-
-const firestore = firebase.firestore();
+const service = new SignalingService();
 
 export async function createOffer(peerConnection) {
-  // Create offer
+  await service.initConnection();
+
+  // Get and push the offer description to the server
   const offerDescription = await peerConnection.createOffer();
+  await service.setConnectionDescription(offerDescription);
   await peerConnection.setLocalDescription(offerDescription);
 
-  // Reference Firestore collections for signaling
-  const callDoc = firestore.collection("calls").doc();
-  const offerCandidates = callDoc.collection("offerCandidates");
-  const answerCandidates = callDoc.collection("answerCandidates");
-
-  // Get candidates for caller, save to db
+  // for each found ice candidate, push it to the server
   peerConnection.onicecandidate = (event) => {
-    console.log('Peer connection - iceCandidate', event);
-    event.candidate && offerCandidates.add(event.candidate.toJSON());
+    if (event.candidate) {
+      console.log("onLocalIceCandidate", "offer");
+      service.addCandidate("offer", event.candidate.toJSON());
+    }
   };
-
-  const offer = {
-    sdp: offerDescription.sdp,
-    type: offerDescription.type,
-  };
-
-  await callDoc.set({ offer });
 
   // Listen for remote answer
-  callDoc.onSnapshot((snapshot) => {
-    const data = snapshot.data();
-    if (!peerConnection.currentRemoteDescription && data?.answer) {
-      const answerDescription = new RTCSessionDescription(data.answer);
+  service.onAnswer(function (data) {
+    if (!peerConnection.currentRemoteDescription) {
+      console.log("onAnswer", data);
+      const answerDescription = new RTCSessionDescription(data);
       peerConnection.setRemoteDescription(answerDescription);
     }
   });
 
-  // When answered, add candidate to peer connection
-  answerCandidates.onSnapshot((snapshot) => {
-    snapshot.docChanges().forEach((change) => {
-      if (change.type === "added") {
-        const candidate = new RTCIceCandidate(change.doc.data());
-        peerConnection.addIceCandidate(candidate);
-      }
-    });
+  // if a new answer candidate is added to the server, we add it to the local connection
+  service.onAnswerCandidate(function (data) {
+    addIceCandidate(peerConnection, data);
   });
 
-  return callDoc.id;
+  return service.connectionId;
 }
 
-export async function answer(peerConnection, channelId) {
-  // Create answer
-  const callDoc = firestore.collection("calls").doc(channelId);
-  const answerCandidates = callDoc.collection("answerCandidates");
-  const offerCandidates = callDoc.collection("offerCandidates");
+export async function answer(peerConnection, connectionId) {
+  const { offer: offerDescription, offerCandidates } = await service.initConnection(
+    connectionId
+  );
 
-  const callData = (await callDoc.get()).data();
-
-  const offerDescription = callData.offer;
+  // Set the offer description from the other peer
   await peerConnection.setRemoteDescription(
     new RTCSessionDescription(offerDescription)
   );
 
+  // Add all existing offer candidates in the connection data
+  offerCandidates.forEach((data) => addIceCandidate(peerConnection, data));
+
+  // Get and push the answer description to the server
   const answerDescription = await peerConnection.createAnswer();
+  await service.setConnectionDescription(answerDescription);
   await peerConnection.setLocalDescription(answerDescription);
 
+  // for each found ice candidate, push it to the server
   peerConnection.onicecandidate = (event) => {
-    console.log('Peer connection - iceCandidate', event);
-    event.candidate && answerCandidates.add(event.candidate.toJSON());
+    if (event.candidate) {
+      console.log("onLocalIceCandidate", "answer");
+      service.addCandidate("answer", event.candidate.toJSON());
+    }
   };
 
-  const answer = {
-    type: answerDescription.type,
-    sdp: answerDescription.sdp,
-  };
-
-  await callDoc.update({ answer });
-
-  offerCandidates.onSnapshot((snapshot) => {
-    snapshot.docChanges().forEach((change) => {
-      if (change.type === "added") {
-        let data = change.doc.data();
-        peerConnection.addIceCandidate(new RTCIceCandidate(data));
-      }
-    });
+  // if a new offer candidate is added to the server, we add it to the local connection
+  service.onOfferCandidate(function (data) {
+    addIceCandidate(peerConnection, data);
   });
+}
+
+function addIceCandidate(peerConnection, data) {
+  console.log("onRemoteIceCandidate", data);
+  const iceCandidate = new RTCIceCandidate(data);
+  peerConnection.addIceCandidate(iceCandidate);
 }
