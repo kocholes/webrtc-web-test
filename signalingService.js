@@ -1,9 +1,9 @@
 import { io } from "socket.io-client";
-const SERVER_URL = "http://localhost:3010";
+const SERVER_URL = "";
 
 export default class SignalingService {
   constructor() {
-    this.socket = io(SERVER_URL);
+    this.socket = io(SERVER_URL, {path: "/signaling/socket.io"});
     this.connectionId;
   }
 
