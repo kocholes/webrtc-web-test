@@ -1,9 +1,10 @@
 import { io } from "socket.io-client";
-const SERVER_URL = "";
 
 export default class SignalingService {
   constructor() {
-    this.socket = io(SERVER_URL, {path: "/signaling/socket.io"});
+    this.socket = io(import.meta.env.VITE_SERVER_URL, {
+      path: import.meta.env.VITE_SERVER_PATH,
+    });
     this.connectionId;
   }
 
@@ -30,7 +31,8 @@ export default class SignalingService {
       this.socket.emit(
         "connectionDescription",
         this.connectionId,
-        { type, sdp },
+        type,
+        sdp,
         (response) => {
           if (response.status === 200) {
             resolve();
@@ -42,11 +44,7 @@ export default class SignalingService {
   }
 
   addCandidate(type, candidate) {
-    this.socket.emit("candidate",
-      this.connectionId,
-      type,
-      candidate,
-    );
+    this.socket.emit("candidate", this.connectionId, type, candidate);
   }
 
   onAnswer(callback) {
